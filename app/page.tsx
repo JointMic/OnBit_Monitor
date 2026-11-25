@@ -49,6 +49,25 @@ export default function Home() {
 
   const { signalQuality, qualityConfidence } = useSignalQuality(ppgData);
 
+  const [relayStatus, setRelayStatus] = useState('');
+  const liveRef = useRef({ isRecording, heartRate, hrv, signalQuality, qualityConfidence, ppgData });
+  liveRef.current = { isRecording, heartRate, hrv, signalQuality, qualityConfidence, ppgData };
+  useEffect(() => {
+    if (!/^\d{4}$/.test(confirmedSubject)) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const send = async () => {
+      const v = liveRef.current;
+      try {
+        const response = await fetch('/api/live', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({code:confirmedSubject, recording:v.isRecording, heartRate:v.isRecording && v.heartRate.bpm > 0 ? v.heartRate.bpm : null, sdnn:v.isRecording && v.hrv.confidence > 0 && Number.isFinite(v.hrv.sdnn) ? v.hrv.sdnn : null, quality:v.isRecording ? v.signalQuality : null, qualityConfidence:v.qualityConfidence}) });
+        if (!disposed) setRelayStatus(response.ok ? '소비자 앱 연동 중 · 코드 ' + confirmedSubject : '전송 실패');
+      } catch { if (!disposed) setRelayStatus('전송 실패'); }
+      if (!disposed) timer=setTimeout(send,process.env.NODE_ENV === 'development' ? 200 : 1000);
+    };
+    send();
+    return () => {disposed=true;clearTimeout(timer);};
+  }, [confirmedSubject, isRecording]);
+
   // Fetch historical data when subject is confirmed
   useEffect(() => {
     const fetchHistoricalData = async () => {
@@ -79,10 +98,10 @@ export default function Home() {
 
   // Confirm User Function
   const confirmUser = () => {
-    if (currentSubject.trim()) {
+    if (/^\d{4}$/.test(currentSubject.trim())) {
       setConfirmedSubject(currentSubject.trim());
     } else {
-      alert('Please enter a valid Subject ID.');
+      alert('4자리 연결 코드를 입력하세요.');
     }
   };
 
@@ -187,11 +206,11 @@ export default function Home() {
       subjectId: confirmedSubject,
       heartRate: {
         bpm: isNaN(heartRate.bpm) ? 0 : heartRate.bpm,
-        confidence: hrv.confidence || 0,
+        confidence: Number.isFinite(heartRate.confidence) ? heartRate.confidence / 100 : 0,
       },
       hrv: {
         sdnn: isNaN(hrv.sdnn) ? 0 : hrv.sdnn,
-        confidence: hrv.confidence || 0,
+        confidence: Number.isFinite(hrv.confidence) ? hrv.confidence / 100 : 0,
       },
       ppgData: ppgData,
       timestamp: new Date(),
@@ -371,6 +390,7 @@ export default function Home() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        <p role="status" className="mb-3 text-sm">{relayStatus}</p>
         {/* User Panel Component */}
         <UserPanel
           isDarkMode={isDarkMode}

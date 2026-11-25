@@ -63,8 +63,11 @@ const UserPanel: React.FC<UserPanelProps> = ({
                 <input
                   type="text"
                   value={currentSubject}
-                  onChange={(e) => setCurrentSubject(e.target.value)}
-                  placeholder="Enter your name"
+                  onChange={(e) => setCurrentSubject(e.target.value.replace(/\D/g, '').slice(0,4))}
+                  placeholder="Enter 4-digit code"
+                  aria-label="4자리 연결 코드"
+                  inputMode="numeric"
+                  maxLength={4}
                   className={`flex-1 border ${
                     isDarkMode 
                       ? 'border-gray-600 bg-gray-800/50 text-gray-200 focus:border-cyan-500' 

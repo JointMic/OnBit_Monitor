@@ -17,6 +17,8 @@ interface SignalQualityResults {
 export default function useSignalQuality(
   ppgData: number[]
 ): SignalQualityResults {
+  const lastAssessment = useRef(0);
+  const busy = useRef(false);
   const modelRef = useRef<tf.LayersModel | null>(null);
   const [signalQuality, setSignalQuality] = useState<string>('--');
   const [qualityConfidence, setQualityConfidence] = useState<number>(0);
@@ -43,7 +45,9 @@ export default function useSignalQuality(
   }, [ppgData]);
 
   const assessSignalQuality = async (signal: number[]) => {
-    if (!modelRef.current || signal.length < 100) return;
+    if (!modelRef.current || signal.length < 100 || busy.current || performance.now() - lastAssessment.current < 500) return;
+    busy.current = true;
+    lastAssessment.current = performance.now();
 
     try {
       const features = calculateFeatures(signal);
@@ -65,6 +69,8 @@ export default function useSignalQuality(
       prediction.dispose();
     } catch (error) {
       console.error('Error assessing signal quality:', error);
+    } finally {
+      busy.current = false;
     }
   };
 

@@ -65,6 +65,7 @@ export default function usePPGProcessing(
   const [confidence, setConfidence] = useState<number>(0);
   const [hrv, setHRV] = useState<HRVResult>({ sdnn: 0, confidence: 0 });
 
+  const lastVideoTime = useRef(-1);
   const streamRef = useRef<MediaStream | null>(null);
 
   const fpsRef = useRef<number>(30);
@@ -149,6 +150,9 @@ export default function usePPGProcessing(
   const processFrame = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
+    // Process each camera frame once, rather than counting display refreshes.
+    if (videoRef.current.readyState < 2 || videoRef.current.currentTime === lastVideoTime.current) return;
+    lastVideoTime.current = videoRef.current.currentTime;
     measureFPS();
 
     const canvas = canvasRef.current;
@@ -264,6 +268,7 @@ export default function usePPGProcessing(
   const normalizeSignal = (signal: number[]): number[] => {
     const min = Math.min(...signal);
     const max = Math.max(...signal);
+    if (max === min) return signal.map(() => 0);
     return signal.map((value) => (value - min) / (max - min));
   };
 
@@ -330,7 +335,7 @@ export default function usePPGProcessing(
       (interval) => interval >= 250 && interval <= 2000
     );
 
-    if (validIntervals.length === 0) return { sdnn: 0, confidence: 0 };
+    if (validIntervals.length < 2) return { sdnn: 0, confidence: 0 };
 
     const meanRR =
       validIntervals.reduce((sum, rr) => sum + rr, 0) / validIntervals.length;

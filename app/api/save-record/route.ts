@@ -35,7 +35,6 @@ export async function POST(request: Request) {
     await dbConnect();
     const body = await request.json();
 
-    console.log('Received request body:', body); // Add logging to verify incoming data
 
     const { subjectId, heartRate, hrv, ppgData, timestamp } = body;
 
@@ -56,7 +55,6 @@ export async function POST(request: Request) {
       timestamp: timestamp || new Date(),
     });
 
-    console.log('Saved record:', newRecord); // Log the saved record
 
     return NextResponse.json(
       { success: true, data: newRecord },
