@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // app/api/last-access/route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';

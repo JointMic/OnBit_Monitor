@@ -142,3 +142,9 @@ To deploy HeartLens on a platform like Vercel:
 - Follows **TypeScript** best practices and **Next.js 13 App Router** conventions  
 
 ---
+
+
+## OnBit production
+Monitor: https://onbit-monitor.vercel.app
+Consumer: https://onbit-fe.vercel.app
+Production requires server-side MONGODB_URI in Vercel and Atlas network access. Both screens use the same four-digit demo code; this is a demo identifier, not authentication. The consumer proxies /api to Monitor with Vercel rewrites. The production relay persists the latest snapshot per code in onbit.live_measurements. Local dev uses memory. Deploy with `vercel deploy --prod --scope pdgdaccord`.
